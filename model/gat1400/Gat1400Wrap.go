@@ -301,3 +301,26 @@ func (wrap *Gat1400Wrap) BuildDigest(dt DigestType, accessPlatformId, transmitPl
 		RecordList: digests,
 	})
 }
+
+func (wrap *Gat1400Wrap) GetDeviceIDs() []string {
+	deviceIds := make([]string, 0)
+	switch wrap.DataType {
+	case GAT1400_FACE:
+		for _, item := range wrap.FaceModel.FaceListObject.FaceObject {
+			deviceIds = append(deviceIds, item.DeviceID)
+		}
+	case GAT1400_BODY:
+		for _, item := range wrap.PersonModel.PersonListObject.PersonObject {
+			deviceIds = append(deviceIds, item.DeviceID)
+		}
+	case GAT1400_VEHICLE:
+		for _, item := range wrap.MotorVehicleModel.MotorVehicleListObject.MotorVehicleObject {
+			deviceIds = append(deviceIds, item.DeviceID)
+		}
+	case GAT1400_NONMOTOR:
+		for _, item := range wrap.NonMotorVehicleModel.NonMotorVehicleListObject.NonMotorVehicleObject {
+			deviceIds = append(deviceIds, item.DeviceID)
+		}
+	}
+	return deviceIds
+}

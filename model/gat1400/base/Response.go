@@ -1,10 +1,10 @@
 package base
 
 import (
+	"dyzs/data-flow/util/times"
 	"encoding/json"
 	"errors"
 	jsoniter "github.com/json-iterator/go"
-	"dyzs/data-flow/util/times"
 	"time"
 )
 
@@ -73,7 +73,6 @@ type ResponseStatusObject struct {
 	StatusString string `json:"StatusString"`
 }
 
-
 func BuildResponseObject(url string, recordId string, code string) *ResponseStatusObject {
 	return &ResponseStatusObject{
 		ID:           recordId,
@@ -97,7 +96,6 @@ func BuildSingleResponse(obj *ResponseStatusObject) *ResponseStatusSingleObj {
 		ResponseStatusObject: obj,
 	}
 }
-
 
 func DecodeBytesToReponse(bytes []byte) (*Response, error) {
 	res := &Response{}

@@ -1,15 +1,15 @@
 package main
 
 import (
+	"dyzs/data-flow/logger"
+	_ "dyzs/data-flow/operator"
+	"dyzs/data-flow/stream"
+	"dyzs/data-flow/util"
 	"fmt"
 	"github.com/json-iterator/go/extra"
 	"github.com/spf13/viper"
 	"os"
 	"os/signal"
-	"dyzs/data-flow/logger"
-	_ "dyzs/data-flow/operator"
-	"dyzs/data-flow/stream"
-	"dyzs/data-flow/util"
 )
 
 func init() {

@@ -36,7 +36,7 @@ func LoadResourceChannels(resource *model.Resource) (channels []onvif.Profile, e
 	if err != nil {
 		return nil, err
 	}
-	return gp.Profiles, nil
+	return []onvif.Profile{gp.Profiles}, nil
 }
 
 //获取rtsp流地址

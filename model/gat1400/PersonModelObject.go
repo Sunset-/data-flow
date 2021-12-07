@@ -142,9 +142,9 @@ func (item *PersonObject) GetDigest() *protobuf.DigestRecord {
 		shotTime = item.SubImageList.SubImageInfoObject[0].ShotTime
 	}
 	return &protobuf.DigestRecord{
-		DataCategory:     "GAT1400",
-		DataType:         GAT1400_BODY,
-		ResourceId:       item.DeviceID,
-		EventTime:        times.Str2TimeF(shotTime,GAT1400_TIME_FORMATTER).UnixNano() / 1e6,
+		DataCategory: "GAT1400",
+		DataType:     GAT1400_BODY,
+		ResourceId:   item.DeviceID,
+		EventTime:    times.Str2TimeF(shotTime, GAT1400_TIME_FORMATTER).UnixNano() / 1e6,
 	}
 }

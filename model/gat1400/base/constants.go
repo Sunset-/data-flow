@@ -1,18 +1,18 @@
 package base
 
-const CONTENT_TYPE  = "application/VIID+JSON"
+const CONTENT_TYPE = "application/VIID+JSON"
 
 const (
 	REGIST_RETURN_AUTHORIZATION = "WWW-Authenticate"
-	NONCE         = "nonce"
-	QOP           = "qop"
-	REALM         = "realm"
-	OPAQUE        = "opaque"
-	RESPONSE      = "response"
-	ALGORITHM     = "algorithm"
-	URI           = "uri"
-	NC            = "nc"
-	CNONCE        = "cnonce"
+	NONCE                       = "nonce"
+	QOP                         = "qop"
+	REALM                       = "realm"
+	OPAQUE                      = "opaque"
+	RESPONSE                    = "response"
+	ALGORITHM                   = "algorithm"
+	URI                         = "uri"
+	NC                          = "nc"
+	CNONCE                      = "cnonce"
 )
 
 const (

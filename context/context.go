@@ -189,8 +189,7 @@ func GetResource(id string) (res *model.Resource, ok bool) {
 	return nil, false
 }
 
-
-func ReadAllResourceGB(cb func(res map[string]*model.Resource)){
+func ReadAllResourceGB(cb func(res map[string]*model.Resource)) {
 	rwLock.RLock()
 	defer rwLock.RUnlock()
 	cb(RESOURCE_GBID_EQ)

@@ -7,13 +7,15 @@ type KeepaliveModel struct {
 }
 
 type KeepaliveObject struct {
-	DeviceID string `json:"DeviceID"`
+	DeviceID        string `json:"DeviceID"`
+	ProtocolVersion string `json:"ProtocolVersion,omitempty"`
 }
 
-func BuildGat1400KeepaliveObject(deviceID string) *KeepaliveModel {
+func BuildGat1400KeepaliveObject(deviceID, protocolVersion string) *KeepaliveModel {
 	return &KeepaliveModel{
 		KeepaliveObject: &KeepaliveObject{
-			DeviceID: deviceID,
+			DeviceID:        deviceID,
+			ProtocolVersion: protocolVersion,
 		},
 	}
 }

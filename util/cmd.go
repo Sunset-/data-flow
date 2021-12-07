@@ -2,10 +2,10 @@ package util
 
 import (
 	"bytes"
+	"dyzs/data-flow/logger"
 	"fmt"
 	"os/exec"
 	"strings"
-	"dyzs/data-flow/logger"
 )
 
 func ExecCmd(cmdStr string) (string, error) {

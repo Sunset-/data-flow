@@ -138,6 +138,6 @@ func (item *FaceObject) GetDigest() *protobuf.DigestRecord {
 		DataCategory: "GAT1400",
 		DataType:     GAT1400_FACE,
 		ResourceId:   item.DeviceID,
-		EventTime:    times.Str2TimeF(shotTime,GAT1400_TIME_FORMATTER).UnixNano() / 1e6,
+		EventTime:    times.Str2TimeF(shotTime, GAT1400_TIME_FORMATTER).UnixNano() / 1e6,
 	}
 }

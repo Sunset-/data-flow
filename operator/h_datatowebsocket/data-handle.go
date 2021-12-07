@@ -2,6 +2,7 @@ package h_datatowebsocket
 
 import (
 	"dyzs/data-flow/concurrent"
+	"dyzs/data-flow/constants"
 	"dyzs/data-flow/logger"
 	"dyzs/data-flow/model/gat1400"
 	"dyzs/data-flow/model/gat1400/base"
@@ -41,10 +42,14 @@ func (dh *DataHandler) castKafkaMsgToGat1400(kafkaMsgs []*kafka.KafkaMessage) []
 	wraps := make([]*gat1400.Gat1400Wrap, 0)
 
 	for _, kafkaMsg := range kafkaMsgs {
+		if kafkaMsg.Topic != constants.TOPIC_LOCAL_GAT1400 && kafkaMsg.Topic != constants.TOPIC_LOCAL_GAT1400_STRUCTURE {
+			continue
+		}
 		w := &gat1400.Gat1400Wrap{}
 		err := jsoniter.Unmarshal(kafkaMsg.Value, w)
 		if err != nil {
 			logger.LOG_ERROR("kafkamsgto1400 消息转化失败", err)
+			logger.LOG_WARN(string(kafkaMsg.Value))
 			continue
 		}
 		wraps = append(wraps, w)
@@ -87,7 +92,10 @@ func (dh *DataHandler) downloadWrapImage(wraps []*gat1400.Gat1400Wrap) {
 }
 
 func (dh *DataHandler) downloadImage(image *base.SubImageInfo) {
-	url := image.Data
+	url := image.StoragePath
+	if url == "" {
+		url = image.Data
+	}
 	if url == "" {
 		logger.LOG_WARN("图片路径缺失：", nil)
 		return

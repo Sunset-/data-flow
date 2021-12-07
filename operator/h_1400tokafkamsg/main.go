@@ -1,6 +1,7 @@
 package h_1400tokafkamsg
 
 import (
+	"dyzs/data-flow/context"
 	"dyzs/data-flow/logger"
 	"dyzs/data-flow/model/gat1400"
 	"dyzs/data-flow/model/kafka"
@@ -23,7 +24,12 @@ func init() {
 }
 
 func Init(config interface{}) error {
+	topic := context.GetString("1400tokafkamsg_topic")
+	if topic != "" {
+		_data_topic = topic
+	}
 	logger.LOG_WARN("------------------ 1400tokafkamsg config ------------------")
+	logger.LOG_WARN("1400tokafkamsg_topic : " + _data_topic)
 	logger.LOG_WARN("------------------------------------------------------")
 	return nil
 }

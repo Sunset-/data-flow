@@ -44,6 +44,7 @@ type Gat1400Client struct {
 
 	targetPlatformId    string //目标平台id
 	userIdentify        string //视图库id
+	protocolVersion     string //协议版本
 	viewLibAddr         string //上级ip
 	locationViewLibAddr string //重定向上级ip
 	openAuth            bool   //是否开启注册
@@ -63,6 +64,7 @@ type Gat1400Client struct {
 func (c *Gat1400Client) Init(config interface{}) error {
 	targetPlatformId := context.GetString("1400client_platformId")
 	userIdentify := context.GetString("1400client_userIdentify")
+	protocolVersion := context.GetString("1400client_protocolVersion")
 	viewLibAddr := context.GetString("1400client_viewLibAddr")
 	openAuth := context.GetBool("1400client_openAuth")
 	username := context.GetString("1400client_username")
@@ -75,6 +77,7 @@ func (c *Gat1400Client) Init(config interface{}) error {
 	logger.LOG_WARN("------------------ 1400client config ------------------")
 	logger.LOG_WARN("1400client_platformId : " + targetPlatformId)
 	logger.LOG_WARN("1400client_userIdentify : " + userIdentify)
+	logger.LOG_WARN("1400client_protocolVersion : " + protocolVersion)
 	logger.LOG_WARN("1400client_viewLibAddr : " + viewLibAddr)
 	logger.LOG_WARN("1400client_openAuth : " + strconv.FormatBool(openAuth))
 	logger.LOG_WARN("1400client_username : " + username)
@@ -98,6 +101,7 @@ func (c *Gat1400Client) Init(config interface{}) error {
 	c.targetPlatformId = targetPlatformId
 	c.viewLibAddr = viewLibAddr
 	c.userIdentify = userIdentify
+	c.protocolVersion = protocolVersion
 	c.openAuth = openAuth
 	c.username = username
 	c.password = password
@@ -167,7 +171,7 @@ func (c *Gat1400Client) mustRegist() {
 func (c *Gat1400Client) regist() error {
 	currentViewLibAddr := c.getViewLibAddr()
 	//注册
-	registParams, _ := json.Marshal(gat1400.BuildGat1400RegisterObj(c.userIdentify))
+	registParams, _ := json.Marshal(gat1400.BuildGat1400RegisterObj(c.userIdentify, c.protocolVersion))
 	registParamsBytes := bytes.NewBuffer(registParams)
 	req, err := http.NewRequest("POST", "http://"+currentViewLibAddr+base.URL_REGIST, registParamsBytes)
 	if err != nil {
@@ -196,6 +200,8 @@ func (c *Gat1400Client) regist() error {
 			return errors.New("重定向地址为空")
 		}
 		logger.LOG_INFO("重定向地址为： ", location)
+		location = strings.ReplaceAll(location, base.URL_REGIST, "")
+		logger.LOG_INFO("重定向地址处理后： ", location)
 		uri := strings.Split(strings.Trim(strings.ReplaceAll(location, "http://", ""), " "), ":")
 		if len(uri) != 2 {
 			return errors.New("重定向地址错误:" + location)
@@ -308,8 +314,9 @@ func (c *Gat1400Client) loopKeepalive() {
 		time.Sleep(time.Duration(interval) * time.Second)
 		//保活
 		err := func() error {
-			keepaliveParams, _ := json.Marshal(gat1400.BuildGat1400KeepaliveObject(c.userIdentify))
-			req, err := http.NewRequest("POST", "http://"+c.viewLibAddr+base.URL_KEEPALIVE, bytes.NewBuffer(keepaliveParams))
+			currentViewLibAddr := c.getViewLibAddr()
+			keepaliveParams, _ := json.Marshal(gat1400.BuildGat1400KeepaliveObject(c.userIdentify, c.protocolVersion))
+			req, err := http.NewRequest("POST", "http://"+currentViewLibAddr+base.URL_KEEPALIVE, bytes.NewBuffer(keepaliveParams))
 			if err != nil {
 				return err
 			}
@@ -394,11 +401,12 @@ func (c *Gat1400Client) Handle(data interface{}, next func(interface{}) error) e
 		func(wrap *gat1400.Gat1400Wrap) {
 			tasks = append(tasks, func() {
 				err := util.Retry(func() error {
+					currentViewLibAddr := c.getViewLibAddr()
 					json, err := wrap.BuildToJson()
 					if err != nil {
 						return err
 					}
-					req, err := http.NewRequest("POST", "http://"+c.viewLibAddr+SEND_DATA_URLS[w.DataType], bytes.NewBuffer(json))
+					req, err := http.NewRequest("POST", "http://"+currentViewLibAddr+SEND_DATA_URLS[wrap.DataType], bytes.NewBuffer(json))
 					if err != nil {
 						return err
 					}
@@ -437,7 +445,11 @@ func (c *Gat1400Client) Handle(data interface{}, next func(interface{}) error) e
 						return nil
 					}
 					return errors.New("发送失败：" + string(resBody))
-				}, 3, time.Second*3)
+				}, -1, time.Second*3)
+				deviceIds := wrap.GetDeviceIDs()
+				for _, id := range deviceIds {
+					logger.LOG_INFO("发送成功：", wrap.DataType, ",", id)
+				}
 				if err != nil {
 					logger.LOG_WARN(err)
 				}

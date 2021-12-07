@@ -21,28 +21,44 @@ import (
 
 func init() {
 	stream.RegistHandler("downloadimage", func() stream.Handler {
-		return &stream.HandlerWrapper{
-			InitFunc:   Init,
-			HandleFunc: Handle,
-			CloseFunc:  Close,
-		}
+		return &ImageDownloader{}
 	})
 }
 
-var executor *concurrent.Executor
-var client *http.Client
+type ImageDownloader struct {
+	executor *concurrent.Executor
+	client   *http.Client
 
-func Init(config interface{}) error {
+	downloadTypes   map[string]bool
+	convertUrlRules string
+	imageUrlCovert  func(string) string
+}
+
+func (h *ImageDownloader) Init(config interface{}) error {
 	capacity := 20
 	configCapacity := context.GetInt("downloadimage_capacity")
 	if configCapacity > 0 {
 		capacity = configCapacity
 	}
+
+	h.downloadTypes = make(map[string]bool)
+	types := context.GetString("downloadimage_types")
+	for _, t := range strings.Split(types, ",") {
+		t = strings.TrimSpace(t)
+		if t != "" {
+			h.downloadTypes[t] = true
+		}
+	}
+
+	h.convertUrlRules = context.GetString("downloadimage_converturl")
+
 	logger.LOG_WARN("------------------ downloadimage config ------------------")
 	logger.LOG_WARN("downloadimage_capacity : " + strconv.Itoa(capacity))
+	logger.LOG_WARN("downloadimage_types : " + types)
+	logger.LOG_WARN("downloadimage_converturl : " + h.convertUrlRules)
 	logger.LOG_WARN("------------------------------------------------------")
-	executor = concurrent.NewExecutor(capacity)
-	client = &http.Client{
+	h.executor = concurrent.NewExecutor(capacity)
+	h.client = &http.Client{
 		Transport: &http.Transport{
 			DisableKeepAlives:   false, //false 长链接 true 短连接
 			Proxy:               http.ProxyFromEnvironment,
@@ -53,10 +69,11 @@ func Init(config interface{}) error {
 		},
 		Timeout: 5 * time.Second, //粗粒度 时间计算包括从连接(Dial)到读完response body
 	}
+	h.InitImageUrlConvert()
 	return nil
 }
 
-func Handle(data interface{}, next func(interface{}) error) error {
+func (h *ImageDownloader) Handle(data interface{}, next func(interface{}) error) error {
 	wraps, ok := data.([]*gat1400.Gat1400Wrap)
 	if !ok {
 		return errors.New(fmt.Sprintf("Handle [imagedeal] 数据格式错误，need []*daghub.StandardModelWrap , get %T", reflect.TypeOf(data)))
@@ -67,28 +84,41 @@ func Handle(data interface{}, next func(interface{}) error) error {
 	tasks := make([]func(), 0)
 	for _, wrap := range wraps {
 		for _, item := range wrap.GetSubImageInfos() {
-			func(img *base.SubImageInfo) {
-				tasks = append(tasks, func() {
-					downloadImage(img)
-				})
-			}(item)
+			//下载图片
+			if h.downloadTypes[item.Type] {
+				func(img *base.SubImageInfo) {
+					tasks = append(tasks, func() {
+						err := h.downloadImage(img)
+						if err != nil {
+							logger.LOG_WARN("图片下载失败：", err)
+							logger.LOG_WARN("图片下载失败url：", img.StoragePath)
+							//转换图片url
+							item.StoragePath = h.convertUrl(item.StoragePath)
+						}
+					})
+				}(item)
+			} else {
+				//转换图片url
+				item.StoragePath = h.convertUrl(item.StoragePath)
+			}
 		}
 	}
-	err := executor.SubmitSyncBatch(tasks)
-	if err != nil {
-		logger.LOG_ERROR("批量下载图片失败：", err)
+	if len(tasks) > 0 {
+		err := h.executor.SubmitSyncBatch(tasks)
+		if err != nil {
+			logger.LOG_ERROR("批量下载图片失败：", err)
+		}
 	}
 	return next(wraps)
 }
 
-func downloadImage(image *base.SubImageInfo) {
-	url := image.Data
+func (h *ImageDownloader) downloadImage(image *base.SubImageInfo) error {
+	url := image.StoragePath
 	if url == "" {
-		logger.LOG_WARN("图片路径缺失：", nil)
-		return
+		return errors.New("图片路径缺失")
 	}
-	if strings.Index(url, "http://") != 0 {
-		return
+	if strings.Index(url, "http://") != 0 && strings.Index(url, "https://") != 0 {
+		return errors.New("图片路径非http/https")
 	}
 	err := util.Retry(func() error {
 		req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -97,7 +127,7 @@ func downloadImage(image *base.SubImageInfo) {
 		}
 		req.Header.Set("Connection", "keep-alive")
 
-		res, err := client.Get(url)
+		res, err := h.client.Get(url)
 		if err != nil {
 			return err
 		}
@@ -111,19 +141,60 @@ func downloadImage(image *base.SubImageInfo) {
 		if err != nil {
 			return err
 		}
-		image.Data = base64.Encode(bytes)
+		if len(bytes) > 0 {
+			image.Data = base64.Encode(bytes)
+			image.StoragePath = ""
+		}
 		return nil
 	}, 3, 100*time.Millisecond)
 
-	if err != nil {
-		logger.LOG_WARN("下载图片失败：url - "+url, err)
-		image.Data = ""
+	return err
+}
+
+func (h *ImageDownloader) InitImageUrlConvert() {
+	ruleStr := strings.TrimSpace(h.convertUrlRules)
+	ruleStrs := strings.Split(ruleStr, "|")
+	rules := make([][]string, 0, len(ruleStrs))
+	for _, str := range ruleStrs {
+		str = strings.TrimSpace(str)
+		if str == "" {
+			continue
+		}
+		rule := strings.Split(str, ",")
+		rules = append(rules, rule)
+	}
+	if len(rules) == 0 {
+		h.imageUrlCovert = nil
+		return
+	}
+	h.imageUrlCovert = func(url string) string {
+		for _, rule := range rules {
+			switch len(rule) {
+			case 2:
+				url = strings.Replace(url, rule[0], rule[1], 1)
+			default:
+			}
+		}
+		return url
 	}
 }
 
-func Close() error {
-	if executor != nil {
-		executor.Close()
+func (h *ImageDownloader) convertUrl(url string) string {
+	if url == "" {
+		return url
+	}
+	if h.imageUrlCovert == nil {
+		return url
+	}
+	logger.LOG_DEBUG(fmt.Sprintf("转换前的url：%s，url.length：%d", url, len(url)))
+	url = h.imageUrlCovert(url)
+	logger.LOG_DEBUG(fmt.Sprintf("转换后的url：%s，url.length：%d", url, len(url)))
+	return url
+}
+
+func (h *ImageDownloader) Close() error {
+	if h.executor != nil {
+		h.executor.Close()
 	}
 	return nil
 }

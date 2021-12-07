@@ -7,13 +7,15 @@ type RegisterModel struct {
 }
 
 type RegisterObject struct {
-	DeviceID string `json:"DeviceID"`
+	DeviceID        string `json:"DeviceID"`
+	ProtocolVersion string `json:"ProtocolVersion,omitempty"`
 }
 
-func  BuildGat1400RegisterObj(deviceID string) *RegisterModel  {
+func BuildGat1400RegisterObj(deviceID, protocolVersion string) *RegisterModel {
 	return &RegisterModel{
-		RegisterObject:&RegisterObject{
-			DeviceID : deviceID,
+		RegisterObject: &RegisterObject{
+			DeviceID:        deviceID,
+			ProtocolVersion: protocolVersion,
 		},
 	}
 }

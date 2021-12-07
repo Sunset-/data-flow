@@ -249,7 +249,7 @@ func (s *Gat1400Server) regist(c *gin.Context) {
 		authorization = fmt.Sprintf(`Digest realm="myrealm",qop="auth",nonce="%s"`, nonce)
 		mh := textproto.MIMEHeader(c.Writer.Header())
 		mh["WWW-Authenticate"] = []string{authorization}
-		c.JSON(http.StatusUnauthorized, base.BuildSingleResponse(base.BuildResponseObject(base.URL_REGIST, viewID, base.VIEWID_IS_NULL)))
+		c.JSON(http.StatusUnauthorized, base.BuildSingleResponse(base.BuildResponseObject(base.URL_REGIST, viewID, base.OK)))
 		return
 	}
 
@@ -269,7 +269,7 @@ func (s *Gat1400Server) regist(c *gin.Context) {
 		"nonce",
 		"cnonce",
 		"response",
-		"algorithm",
+		//"algorithm",
 		"qop",
 		"nc"}
 	for _, k := range keys {

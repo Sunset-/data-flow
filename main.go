@@ -44,6 +44,8 @@ func main() {
 
 	logger.Init()
 
+	logger.LOG_WARN("123123")
+
 	context.Init()
 
 	//context.Set("CENTER_IP", "106.13.71.247")
@@ -111,8 +113,7 @@ func init1400server() {
 	context.Set("1400server_password", "")
 }
 
-
-func testOnvif(){
+func testOnvif() {
 
 	context.Set("$task", &model.Task{
 		AccessType: "onvif",
@@ -134,7 +135,6 @@ func testOnvif(){
 		Name:         "",
 	}
 	context.AssignResources([]*model.Resource{resource})
-
 
 	//
 	//rs ,err := e_onvif.LoadResourceChannels(resource)
@@ -158,8 +158,7 @@ func testOnvif(){
 	return
 }
 
-
-func testCloud(){
+func testCloud() {
 
 	aesKey := "aHVpaGFpdG9hbGlj"
 	//bytes,_ := ioutil.ReadFile("./oss.data")
@@ -189,27 +188,27 @@ func testCloud(){
 	}
 	dh := datahub.NewClientWithConfig("https://101.89.99.42:443", config, account)
 
-	topic,err := dh.GetTopic("sj_dwly_sjjr","huihaialiyun1400")
-	if err!=nil{
+	topic, err := dh.GetTopic("sj_dwly_sjjr", "huihaialiyun1400")
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	gr,err := dh.GetCursor("sj_dwly_sjjr","huihaialiyun1400","1",datahub.LATEST)
-	if err!=nil{
+	gr, err := dh.GetCursor("sj_dwly_sjjr", "huihaialiyun1400", "1", datahub.LATEST)
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	ggr,err  := dh.GetTupleRecords("sj_dwly_sjjr","huihaialiyun1400","1",gr.Cursor,1,topic.RecordSchema)
-	if err!=nil{
+	ggr, err := dh.GetTupleRecords("sj_dwly_sjjr", "huihaialiyun1400", "1", gr.Cursor, 1, topic.RecordSchema)
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	filepath := ""
-	for _,record:=range ggr.Records{
-		data,ok := record.(*datahub.TupleRecord)
-		if ok{
+	for _, record := range ggr.Records {
+		data, ok := record.(*datahub.TupleRecord)
+		if ok {
 			//bytes := []byte(data.GetValueByName("data").String())
 			//_ = ioutil.WriteFile("./test.dat",bytes,0666)
 			//fmt.Println("解密前：",string(bytes))
@@ -218,14 +217,13 @@ func testCloud(){
 			//	fmt.Println("揭秘四百：",err)
 			//}
 			//fmt.Println("解密后:",string(ubytes))
-			fmt.Println("type:",data.GetValueByName("type").String())
+			fmt.Println("type:", data.GetValueByName("type").String())
 			filepath = data.GetValueByName("path").String()
-			fmt.Println("path:",data.GetValueByName("path").String())
-		}else{
+			fmt.Println("path:", data.GetValueByName("path").String())
+		} else {
 			fmt.Println("no tuple")
 		}
 	}
-
 
 	//oss
 	//filepath := "alioss/huihai/gat1400/e5688f50cdf64f31990925cc72c2c980"
@@ -241,18 +239,16 @@ func testCloud(){
 		fmt.Println(err)
 		return
 	}
-	body,err := bucket.GetObject(filepath)
-	bytes,_ := ioutil.ReadAll(body)
-	ubytes,err := aes.DecryptAES(bytes,[]byte(aesKey))
+	body, err := bucket.GetObject(filepath)
+	bytes, _ := ioutil.ReadAll(body)
+	ubytes, err := aes.DecryptAES(bytes, []byte(aesKey))
 	//_ = jsoniter.Unmarshal(ubytes,gat)
-	fmt.Println("解密后:",string(ubytes))
+	fmt.Println("解密后:", string(ubytes))
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 }
-
-
 
 func newTransport() *http.Transport {
 	// New Transport

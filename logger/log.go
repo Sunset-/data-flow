@@ -125,16 +125,23 @@ func ChangeLevel(level string) {
 }
 
 func LOG_DEBUG(vars ...interface{}) {
-	fmt.Println(vars...)
+	if log.GetLevel() == log.DebugLevel {
+		fmt.Println(vars...)
+	}
 	log.Debug(vars...)
 }
 
 func LOG_TRACE(vars ...interface{}) {
+	if log.GetLevel() == log.DebugLevel || log.GetLevel() == log.InfoLevel {
+		fmt.Println(vars...)
+	}
 	log.Trace(vars...)
 }
 
 func LOG_INFO(vars ...interface{}) {
-	fmt.Println(vars...)
+	if log.GetLevel() == log.DebugLevel || log.GetLevel() == log.InfoLevel {
+		fmt.Println(vars...)
+	}
 	log.Info(vars...)
 }
 

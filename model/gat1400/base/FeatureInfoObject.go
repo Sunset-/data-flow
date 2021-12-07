@@ -10,11 +10,11 @@ type FeatureList struct {
 	FeatureInfoObject []*FeatureInfo `json:"FeatureInfoObject"`
 }
 
-func Build1400FeatureList(vendor ,algorithmVersion ,featureData string,featureList *FeatureList)  *FeatureList {
-	featureList.FeatureInfoObject = append(featureList.FeatureInfoObject,&FeatureInfo{
-		Vendor: vendor,
-		AlgorithmVersion:algorithmVersion,
-		FeatureData:featureData,
-	} )
+func Build1400FeatureList(vendor, algorithmVersion, featureData string, featureList *FeatureList) *FeatureList {
+	featureList.FeatureInfoObject = append(featureList.FeatureInfoObject, &FeatureInfo{
+		Vendor:           vendor,
+		AlgorithmVersion: algorithmVersion,
+		FeatureData:      featureData,
+	})
 	return featureList
 }

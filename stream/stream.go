@@ -67,7 +67,7 @@ func (s *Stream) linkHandle(index int, data interface{}) error {
 		h := s.handlers[index]
 		start := time.Now()
 		return h.Handle(data, func(ndata interface{}) error {
-			logger.LOG_WARN(strconv.Itoa(index) + "_handle - 耗时：" + time.Since(start).String())
+			logger.LOG_DEBUG(strconv.Itoa(index) + "_handle - 耗时：" + time.Since(start).String())
 			index++
 			return s.linkHandle(index, ndata)
 		})

@@ -38,14 +38,14 @@ type WsSendMessage struct {
 }
 
 type WsSubject struct {
-	RtmpMap map[string]string `json:"rtmp"`
-	Subscribe   []string `json:"subscribe"`
-	UnSubscribe []string `json:"unSubscribe"`
-	PTZControl map[string]PTZControl `json:"ptzControl"`
+	RtmpMap     map[string]string     `json:"rtmp"`
+	Subscribe   []string              `json:"subscribe"`
+	UnSubscribe []string              `json:"unSubscribe"`
+	PTZControl  map[string]PTZControl `json:"ptzControl"`
 }
 
-type PTZControl struct{
-	CMD string `json:"cmd"`
+type PTZControl struct {
+	CMD   string  `json:"cmd"`
 	Speed float64 `json:"speed"`
 }
 
@@ -122,7 +122,7 @@ LOOP:
 				pw.wsLock.Unlock()
 				break READ_LOOP
 			}
-			logger.LOG_INFO("WS_RES：",string(wrap.Content))
+			logger.LOG_INFO("WS_RES：", string(wrap.Content))
 			data := &WsSubject{}
 			err = jsoniter.Unmarshal(wrap.Content, data)
 			if err != nil {

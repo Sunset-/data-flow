@@ -57,9 +57,8 @@ func Time2StrF(t time.Time, formatStr string) string {
 	return str
 }
 
-
 /**字符串->时间对象*/
-func Str2TimeF(timeStr string,formatStr string) time.Time {
+func Str2TimeF(timeStr string, formatStr string) time.Time {
 	loc, _ := time.LoadLocation("Local")
 	theTime, _ := time.ParseInLocation(formatStr, timeStr, loc) //使用模板在对应时区转化为time.time类型
 	return theTime

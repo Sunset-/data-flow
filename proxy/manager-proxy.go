@@ -31,14 +31,12 @@ func StartManagerProxy(port string) {
 	serverIns = server
 }
 
-
 func ChangeLogLevel(ctx *gin.Context) {
 	level := ctx.Query("level")
 	if level != "" {
 		logger.ChangeLevel(level)
 	}
 }
-
 
 type ReponseBody struct {
 	Code int         `json:"code"`

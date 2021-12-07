@@ -3,6 +3,7 @@ package h_uploadimage
 import (
 	"bytes"
 	"dyzs/data-flow/concurrent"
+	"dyzs/data-flow/constants"
 	"dyzs/data-flow/context"
 	"dyzs/data-flow/logger"
 	"dyzs/data-flow/model/gat1400"
@@ -16,8 +17,10 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -40,19 +43,21 @@ func (iu *ImageUploader) Init(config interface{}) error {
 	if configCapacity > 0 {
 		capacity = configCapacity
 	}
-	host := context.GetString("$host")
-	if host == "" {
-		host = "gofastdfs"
+	dfsAddr := strings.TrimSpace(os.Getenv(constants.ENV_GOFASTDFS_ADDR))
+	if len(dfsAddr) > 0 {
+		iu.imageServerAddr = dfsAddr
+	} else if len(context.GetString("$host")) > 0 {
+		iu.imageServerAddr = strings.TrimSpace(context.GetString("$host")) + ":8888"
+	} else {
+		iu.imageServerAddr = "gofastdfs:8080"
 	}
-	imageServerAddr := host + ":8080"
 	logger.LOG_WARN("------------------ imagedeal config ------------------")
 	logger.LOG_WARN("uploadimage_capacity : " + strconv.Itoa(capacity))
-	logger.LOG_WARN("uploadimage_imageServerAddr : " + imageServerAddr)
+	logger.LOG_WARN("uploadimage_imageServerAddr : " + iu.imageServerAddr)
 	logger.LOG_WARN("------------------------------------------------------")
-	if imageServerAddr == "" {
+	if iu.imageServerAddr == "" {
 		return errors.New("Handle [uploadimage]:uploadimage_imageServerAddr 不能为空")
 	}
-	iu.imageServerAddr = imageServerAddr
 	iu.client = &http.Client{
 		Transport: &http.Transport{
 			DisableKeepAlives:   false, //false 长链接 true 短连接
@@ -81,16 +86,16 @@ func (iu *ImageUploader) Handle(data interface{}, next func(interface{}) error) 
 	var lock sync.Mutex
 	for _, wrap := range wraps {
 		for _, item := range wrap.GetSubImageInfos() {
-			func(img *base.SubImageInfo) {
+			func(img *base.SubImageInfo, w *gat1400.Gat1400Wrap) {
 				tasks = append(tasks, func() {
-					e := iu.uploadImage(img)
+					e := iu.uploadImage(img, w.DataType+"_"+img.Type)
 					if e != nil {
 						lock.Lock()
 						uploadErr = e
 						lock.Unlock()
 					}
 				})
-			}(item)
+			}(item, wrap)
 		}
 	}
 	err := iu.executor.SubmitSyncBatch(tasks)
@@ -105,7 +110,7 @@ func (iu *ImageUploader) Handle(data interface{}, next func(interface{}) error) 
 	return next(wraps)
 }
 
-func (iu *ImageUploader) uploadImage(image *base.SubImageInfo) error {
+func (iu *ImageUploader) uploadImage(image *base.SubImageInfo, imageType string) error {
 	imageData := image.Data
 	if imageData == "" {
 		logger.LOG_INFO("图片无base64数据")
@@ -119,6 +124,7 @@ func (iu *ImageUploader) uploadImage(image *base.SubImageInfo) error {
 	err = util.Retry(func() error {
 		bodyBuffer := &bytes.Buffer{}
 		bodyWriter := multipart.NewWriter(bodyBuffer)
+		_ = bodyWriter.WriteField("scene", "img_"+imageType)
 		fileWriter, _ := bodyWriter.CreateFormFile("file", uuid.UUIDShort())
 		_, err = fileWriter.Write(imageBytes)
 		if err != nil {
@@ -143,7 +149,7 @@ func (iu *ImageUploader) uploadImage(image *base.SubImageInfo) error {
 		if resp.StatusCode != 200 {
 			return errors.New("上传图片异常:" + string(resBytes))
 		}
-		image.Data = string(resBytes)
+		image.StoragePath = strings.ReplaceAll(string(resBytes), "gofastdfs:8080", iu.imageServerAddr)
 		return nil
 	}, 3, 100*time.Millisecond)
 

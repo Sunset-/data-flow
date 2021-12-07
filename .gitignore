@@ -7,3 +7,5 @@ data-stream
 data-flow
 ./data-flow
 ./statistics/data-statistics
+main
+statistics/main

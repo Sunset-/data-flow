@@ -8,27 +8,27 @@ import (
 )
 
 type SystemTime struct {
-	VIIDServerID string  `json:"VIIDServerID"` //设备ID，该服务器标识符，中文统称设备ID
+	VIIDServerID string `json:"VIIDServerID"` //设备ID，该服务器标识符，中文统称设备ID
 
-	TimeMode string  `json:"TimeMode"` //校时模式  1 -- 网络  2 -- 手动
+	TimeMode string `json:"TimeMode"` //校时模式  1 -- 网络  2 -- 手动
 
-	LocalTime string  `json:"LocalTime"` //日期时间 dateTime	dateTime	DE00554	格式：YYYYMMDDhhmmss
+	LocalTime string `json:"LocalTime"` //日期时间 dateTime	dateTime	DE00554	格式：YYYYMMDDhhmmss
 
-	TimeZone string `json:"TimeZone"`  //时区 北京属于东八区，UTC+8
+	TimeZone string `json:"TimeZone"` //时区 北京属于东八区，UTC+8
 }
 
-func BuildSystemTime() *SystemTime{
+func BuildSystemTime() *SystemTime {
 
 	var ip string
-	ipNet ,e := externalIP()
-	if e == nil && ipNet != nil{
+	ipNet, e := externalIP()
+	if e == nil && ipNet != nil {
 		ip = ipNet.String()
 	}
 	return &SystemTime{
 		VIIDServerID: ip,
-		TimeMode: "1",
-		LocalTime:times.Time2StrF(time.Now(),"20060102150405"),
-		TimeZone: "UTC+8",
+		TimeMode:     "1",
+		LocalTime:    times.Time2StrF(time.Now(), "20060102150405"),
+		TimeZone:     "UTC+8",
 	}
 }
 
